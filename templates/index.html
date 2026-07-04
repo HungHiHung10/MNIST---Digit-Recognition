@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MNIST CNN Lab</title>
+    <link rel="icon" type="image/png" href="{{ url_for('static', filename='favicon.png') }}">
+    <link rel="shortcut icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <header class="site-nav">
+        <a class="brand" href="#top">MNIST CNN Lab</a>
+        <nav aria-label="Điều hướng trang">
+            <a href="#architecture">Kiến trúc</a>
+            <a href="#logic">Logic CNN</a>
+            <a href="#predictor">Dự đoán</a>
+        </nav>
+    </header>
+
+    <main id="top">
+        <section class="hero-section">
+            <div class="hero-copy reveal">
+                <p class="eyebrow">Handwriting Recognition</p>
+                <h1>Nhận diện chữ số viết tay bằng CNN</h1>
+                <p>
+                    Từ trực giác của mạng tích chập đến ứng dụng dự đoán: bạn có thể đọc nhanh
+                    kiến trúc model, xem logic từng lớp, rồi kéo xuống để vẽ hoặc upload chữ số.
+                </p>
+                <a class="primary-link" href="#architecture">Khám phá kiến trúc</a>
+            </div>
+            <div class="hero-visual reveal" aria-label="Minh họa chữ số viết tay">
+                <div class="digit-sheet">
+                    <span>3</span><span>8</span><span>1</span><span>6</span>
+                    <span>9</span><span>0</span><span>4</span><span>2</span>
+                    <span>7</span><span>5</span><span>2</span><span>9</span>
+                </div>
+            </div>
+        </section>
+
+        <section id="architecture" class="section architecture-section">
+            <div class="section-heading reveal">
+                <p class="eyebrow">Model Architecture</p>
+                <h2>Kiến trúc CNN dùng cho MNIST</h2>
+                <p>
+                    Ảnh đầu vào được đưa về grayscale 28x28. CNN học nét nhỏ trước,
+                    ghép chúng thành hình dạng chữ số, rồi lớp Dense chuyển đặc trưng thành xác suất 10 lớp.
+                </p>
+            </div>
+
+            <div class="cnn-simulation reveal" aria-label="Mo phong truc quan qua trinh CNN xu ly anh MNIST">
+                <div class="cnn-stage input-stage">
+                    <p class="stage-kicker">Input</p>
+                    <div class="mnist-matrix" aria-hidden="true">
+                        <span></span><span></span><span></span><span></span><span></span><span></span>
+                        <span></span><span></span><span class="on"></span><span class="on soft"></span><span></span><span></span>
+                        <span></span><span class="on soft"></span><span></span><span></span><span class="on"></span><span></span>
+                        <span></span><span></span><span></span><span class="on"></span><span class="on soft"></span><span></span>
+                        <span></span><span></span><span class="on"></span><span></span><span></span><span></span>
+                        <span></span><span class="on soft"></span><span class="on"></span><span class="on soft"></span><span></span><span></span>
+                    </div>
+                    <strong>28 x 28 x 1</strong>
+                    <small>Anh xam da can giua</small>
+                </div>
+
+                <div class="cnn-connector">
+                    <span>3x3 kernel</span>
+                </div>
+
+                <div class="cnn-stage conv-stage">
+                    <p class="stage-kicker">Convolution + ReLU</p>
+                    <div class="kernel-demo" aria-hidden="true">
+                        <div class="scan-window"></div>
+                        <div class="kernel-grid">
+                            <span>-1</span><span>0</span><span>1</span>
+                            <span>-1</span><span>0</span><span>1</span>
+                            <span>-1</span><span>0</span><span>1</span>
+                        </div>
+                    </div>
+                    <div class="feature-stack" aria-hidden="true">
+                        <i></i><i></i><i></i>
+                    </div>
+                    <strong>Feature maps</strong>
+                    <small>Net doc, net cong, goc giao</small>
+                </div>
+
+                <div class="cnn-connector">
+                    <span>max</span>
+                </div>
+
+                <div class="cnn-stage pool-stage">
+                    <p class="stage-kicker">Max Pooling</p>
+                    <div class="pool-stack" aria-hidden="true">
+                        <i></i><i></i><i></i>
+                    </div>
+                    <strong>Giam kich thuoc</strong>
+                    <small>Giu tin hieu manh nhat</small>
+                </div>
+
+                <div class="cnn-connector">
+                    <span>flatten</span>
+                </div>
+
+                <div class="cnn-stage dense-stage">
+                    <p class="stage-kicker">Dense + Softmax</p>
+                    <div class="neural-head" aria-hidden="true">
+                        <div class="vector-dots">
+                            <i></i><i></i><i></i><i></i><i></i><i></i>
+                        </div>
+                        <div class="softmax-bars">
+                            <b style="height: 22%"></b>
+                            <b style="height: 36%"></b>
+                            <b style="height: 18%"></b>
+                            <b style="height: 72%"></b>
+                            <b style="height: 28%"></b>
+                            <b style="height: 45%"></b>
+                            <b style="height: 20%"></b>
+                            <b style="height: 14%"></b>
+                            <b style="height: 31%"></b>
+                            <b style="height: 24%"></b>
+                        </div>
+                    </div>
+                    <strong>10 xac suat</strong>
+                    <small>Chon lop co xac suat cao nhat</small>
+                </div>
+            </div>
+
+            <figure class="architecture-map reveal">
+                <div class="layer-card input-layer">
+                    <span class="layer-index">01</span>
+                    <strong>Input</strong>
+                    <small>28 x 28 x 1</small>
+                    <p>Ma trận điểm ảnh grayscale sau khi đảo màu và làm mượt nhẹ.</p>
+                </div>
+                <div class="flow-arrow"></div>
+                <div class="layer-card conv-layer">
+                    <span class="layer-index">02</span>
+                    <strong>Convolution</strong>
+                    <small>Kernel học nét</small>
+                    <p>Quét ảnh để phát hiện cạnh, vòng cong, góc và nét giao nhau.</p>
+                </div>
+                <div class="flow-arrow"></div>
+                <div class="layer-card pool-layer">
+                    <span class="layer-index">03</span>
+                    <strong>Pooling</strong>
+                    <small>Giảm kích thước</small>
+                    <p>Giữ tín hiệu mạnh nhất, giúp mô hình bền hơn với dịch chuyển nhỏ.</p>
+                </div>
+                <div class="flow-arrow"></div>
+                <div class="layer-card dense-layer">
+                    <span class="layer-index">04</span>
+                    <strong>Dense + Softmax</strong>
+                    <small>10 xác suất</small>
+                    <p>Tổng hợp đặc trưng và chọn chữ số có xác suất cao nhất.</p>
+                </div>
+            </figure>
+        </section>
+
+        <section id="logic" class="section logic-section">
+            <div class="section-heading reveal">
+                <p class="eyebrow">Layer Logic</p>
+                <h2>Logic từng lớp hoạt động như thế nào?</h2>
+            </div>
+
+            <div class="logic-grid">
+                <article class="logic-item reveal">
+                    <div class="mini-visual pixels"></div>
+                    <h3>1. Tiền xử lý ảnh</h3>
+                    <p>Canvas hoặc ảnh upload được cắt theo bounding box, căn giữa, chuyển về nền trắng nét đen, rồi resize về 28x28.</p>
+                </article>
+                <article class="logic-item reveal">
+                    <div class="mini-visual kernels"></div>
+                    <h3>2. Convolution</h3>
+                    <p>Các kernel nhỏ trượt qua ảnh. Mỗi kernel giống một bộ dò nét, phản ứng mạnh khi gặp cấu trúc quen thuộc.</p>
+                </article>
+                <article class="logic-item reveal">
+                    <div class="mini-visual pooling"></div>
+                    <h3>3. Pooling</h3>
+                    <p>Pooling nén feature map để giảm nhiễu, giảm số phép tính và giữ các đặc trưng quan trọng nhất.</p>
+                </article>
+                <article class="logic-item reveal">
+                    <div class="mini-visual softmax"></div>
+                    <h3>4. Softmax</h3>
+                    <p>Lớp cuối xuất ra 10 giá trị xác suất tương ứng với các chữ số từ 0 đến 9.</p>
+                </article>
+            </div>
+        </section>
+
+        <section id="predictor" class="section predictor-section">
+            <div class="section-heading reveal">
+                <p class="eyebrow">Interactive Demo</p>
+                <h2>Thử dự đoán chữ số</h2>
+                <p>Vẽ trực tiếp lên bảng hoặc upload ảnh chữ số. Mô hình sẽ tự dự đoán sau khi bạn thao tác.</p>
+            </div>
+
+    <div class="container reveal">
+        <div class="title">
+            <p class="panel-label">Input canvas</p>
+            <h1>Vẽ chữ số</h1>
+            <h3>by Yann André Le Cun</h3>
+            <canvas class="paint" id="canvas" width="280" height="280"></canvas>
+            <div class="upload-panel">
+                <input id="imageUpload" type="file" accept="image/png,image/jpeg,image/jpg,image/webp" hidden>
+                <button id="uploadBtn" type="button">Upload ảnh</button>
+                <span id="uploadStatus" aria-live="polite"></span>
+            </div>
+            <div class="controls">
+                <button id="deleteBtn" type="button">Xóa bảng</button>
+                <button id="eraseBtn" type="button">Tẩy nét</button>
+                <!-- <button id="predictBtn">Predict</button> -->
+            </div>
+        </div>
+        <div id="result">
+            <h3 class="predict">Kết quả:</h3>
+            <p class="predict" id="predictedDigit">Chưa có dự đoán</p>
+            <h3 class="predict">Xác suất:</h3>
+            <canvas id="probChart" height="280px" class="chart"></canvas>
+            <!-- <ul id="probabilities"></ul> -->
+        </div>
+    </div>
+        </section>
+    </main>
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+</body>
+
+</html> 

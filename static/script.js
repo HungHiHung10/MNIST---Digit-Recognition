@@ -3,6 +3,10 @@ const ctx = canvas.getContext('2d');
 const deleteBtn = document.getElementById('deleteBtn');
 const eraseBtn = document.getElementById('eraseBtn');
 const predictBtn = document.getElementById('predictBtn');
+const uploadBtn = document.getElementById('uploadBtn');
+const imageUpload = document.getElementById('imageUpload');
+const uploadStatus = document.getElementById('uploadStatus');
+const revealItems = document.querySelectorAll('.reveal');
 let isDrawing = false;
 let isErasing = false;
 let debounceTimer;
@@ -32,16 +36,26 @@ canvas.addEventListener('touchmove', (e) => {
 });
 canvas.addEventListener('touchend', stopDrawing);
 
+function getCanvasPoint(e) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+        x: (e.clientX - rect.left) * (canvas.width / rect.width),
+        y: (e.clientY - rect.top) * (canvas.height / rect.height)
+    };
+}
+
 function startDrawing(e) {
     isDrawing = true;
+    const point = getCanvasPoint(e);
     ctx.beginPath();
-    ctx.moveTo(e.offsetX, e.offsetY);
+    ctx.moveTo(point.x, point.y);
     resetDebounceTimer();
 }
 
 function draw(e) {
     if (!isDrawing) return;
-    ctx.lineTo(e.offsetX, e.offsetY);
+    const point = getCanvasPoint(e);
+    ctx.lineTo(point.x, point.y);
     ctx.stroke();
     resetDebounceTimer();
 }
@@ -66,7 +80,10 @@ deleteBtn.addEventListener('click', () => {
     ctx.fillStyle = 'white';
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     document.getElementById('predictedDigit').textContent = 'Chưa có dự đoán';
-    document.getElementById('probabilities').innerHTML = '';
+    const probabilities = document.getElementById('probabilities');
+    if (probabilities) {
+        probabilities.innerHTML = '';
+    }
     probChart.data.datasets[0].data = Array(10).fill(0);
     probChart.update();
     // probChart.erase();
@@ -74,19 +91,109 @@ deleteBtn.addEventListener('click', () => {
     ctx.strokeStyle = 'black';
     eraseBtn.textContent = 'Erase';
     eraseBtn.style.backgroundColor = '#1abc9c';
+    uploadStatus.textContent = '';
     resetDebounceTimer();
 });
 
 // Khởi tạo biểu đồ xác suất
-const probChart = new Chart(document.getElementById('probChart'), {
+uploadBtn.addEventListener('click', () => {
+    imageUpload.click();
+});
+
+imageUpload.addEventListener('change', async () => {
+    const file = imageUpload.files && imageUpload.files[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+        uploadStatus.textContent = 'Please choose an image file.';
+        imageUpload.value = '';
+        return;
+    }
+
+    uploadStatus.textContent = 'Uploading...';
+
+    try {
+        await uploadOriginalImage(file);
+        await drawUploadedImage(file);
+        uploadStatus.textContent = file.name;
+        sendPrediction();
+    } catch (error) {
+        console.error('Upload error:', error);
+        uploadStatus.textContent = 'Upload failed.';
+        alert('Loi khi tai anh len');
+    } finally {
+        imageUpload.value = '';
+    }
+});
+
+async function uploadOriginalImage(file) {
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const response = await fetch('/upload', {
+        method: 'POST',
+        body: formData
+    });
+
+    const data = await response.json();
+    if (!response.ok || data.error) {
+        throw new Error(data.error || 'Upload failed');
+    }
+}
+
+function drawUploadedImage(file) {
+    return new Promise((resolve, reject) => {
+        const image = new Image();
+        const objectUrl = URL.createObjectURL(file);
+
+        image.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+            ctx.fillStyle = 'white';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            const scale = Math.min(canvas.width / image.width, canvas.height / image.height);
+            const drawWidth = image.width * scale;
+            const drawHeight = image.height * scale;
+            const drawX = (canvas.width - drawWidth) / 2;
+            const drawY = (canvas.height - drawHeight) / 2;
+
+            ctx.drawImage(image, drawX, drawY, drawWidth, drawHeight);
+            isErasing = false;
+            ctx.strokeStyle = 'black';
+            eraseBtn.textContent = 'Erase';
+            eraseBtn.style.backgroundColor = '#1abc9c';
+            resolve();
+        };
+
+        image.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('Unable to load image'));
+        };
+
+        image.src = objectUrl;
+    });
+}
+
+const probChart = window.Chart ? new Chart(document.getElementById('probChart'), {
     type: 'bar',
     data: {
         labels: ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'],
         datasets: [{
             label: 'Xác suất (%)',
             data: Array(10).fill(0),
-            backgroundColor: 'rgba(54, 162, 235, 0.6)',
-            borderColor: 'rgba(54, 162, 235, 1)',
+            backgroundColor: [
+                'rgba(15, 118, 110, 0.72)',
+                'rgba(232, 93, 79, 0.72)',
+                'rgba(240, 180, 41, 0.78)',
+                'rgba(109, 91, 208, 0.72)',
+                'rgba(79, 159, 95, 0.72)',
+                'rgba(23, 23, 23, 0.72)',
+                'rgba(15, 118, 110, 0.52)',
+                'rgba(232, 93, 79, 0.52)',
+                'rgba(240, 180, 41, 0.58)',
+                'rgba(109, 91, 208, 0.52)'
+            ],
+            borderColor: 'rgba(23, 23, 23, 0.12)',
             borderWidth: 1
         }]
     },
@@ -97,7 +204,38 @@ const probChart = new Chart(document.getElementById('probChart'), {
         },
         plugins: { legend: { display: false } }
     }
-});
+}) : createFallbackChart(document.getElementById('probChart'));
+
+function createFallbackChart(canvasElement) {
+    const bars = document.createElement('div');
+    bars.className = 'prob-fallback';
+    canvasElement.replaceWith(bars);
+
+    const chartState = {
+        data: {
+            datasets: [{
+                data: Array(10).fill(0)
+            }]
+        },
+        update() {
+            bars.innerHTML = chartState.data.datasets[0].data.map((value, digit) => {
+                const percent = Math.max(0, Math.min(100, Number(value) || 0));
+                return `
+                    <div class="prob-row">
+                        <span>${digit}</span>
+                        <div class="prob-track">
+                            <i style="width: ${percent}%"></i>
+                        </div>
+                        <strong>${percent.toFixed(1)}%</strong>
+                    </div>
+                `;
+            }).join('');
+        }
+    };
+
+    chartState.update();
+    return chartState;
+}
 
 // // Hàm gửi dự đoán
 // function sendPrediction() {
@@ -220,7 +358,24 @@ function resetDebounceTimer() {
 }
 
 // Dự đoán khi nhấn nút Predict
-predictBtn.addEventListener('click', sendPrediction);   
+if (predictBtn) {
+    predictBtn.addEventListener('click', sendPrediction);
+}
 deleteBtn.addEventListener('click', () => {
     resetDebounceTimer();
 });
+
+if ('IntersectionObserver' in window) {
+    const revealObserver = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+            if (entry.isIntersecting) {
+                entry.target.classList.add('is-visible');
+                revealObserver.unobserve(entry.target);
+            }
+        });
+    }, { threshold: 0.18 });
+
+    revealItems.forEach((item) => revealObserver.observe(item));
+} else {
+    revealItems.forEach((item) => item.classList.add('is-visible'));
+}
