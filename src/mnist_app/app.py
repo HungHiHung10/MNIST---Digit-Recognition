@@ -35,6 +35,13 @@ if not MODEL_PATH.exists():
     except Exception as e:
         print(f"Error downloading model: {e}")
 
+# Monkey patch Dense to ignore quantization_config
+original_dense_init = tf.keras.layers.Dense.__init__
+def patched_dense_init(self, *args, **kwargs):
+    kwargs.pop('quantization_config', None)
+    original_dense_init(self, *args, **kwargs)
+tf.keras.layers.Dense.__init__ = patched_dense_init
+
 model = tf.keras.models.load_model(str(MODEL_PATH))
 
 app = Flask(
