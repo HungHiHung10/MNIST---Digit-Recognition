@@ -252,7 +252,7 @@ def main() -> None:
         if test_accuracy > best_accuracy:
             best_accuracy = test_accuracy
             save_model(model)
-            print(f'  → Lưu model tốt nhất với accuracy={best_accuracy*100:.2f}%')
+            print(f'  Lưu model tốt nhất với accuracy={best_accuracy*100:.2f}%')
 
     print(f'Hoàn tất đào tạo. Best test accuracy: {best_accuracy*100:.2f}%')
     print(f'Model đã lưu tại: {MODEL_PATH}')

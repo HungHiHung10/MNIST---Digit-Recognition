@@ -7,3 +7,10 @@ venv/
 .ipynb_checkpoints/
 .DS_Store
 src/mnist_app/model.h5
+references/
+assets/dataset/
+assets/images/static/assets/histories/
+static/candidates.png
+
+static/assets/histories/
+static/candidates.png

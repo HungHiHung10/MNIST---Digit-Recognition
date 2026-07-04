@@ -88,11 +88,11 @@ def main() -> None:
     )
 
     test_loss, test_accuracy = model.evaluate(x_test, y_test)
-    print(f'✅ Độ chính xác trên tập kiểm tra: {test_accuracy * 100:.2f}%')
+    print(f'Độ chính xác trên tập kiểm tra: {test_accuracy * 100:.2f}%')
 
     save_sample_images(x_test)
     model.save(MODEL_PATH)
-    print(f'✅ Mô hình đã được lưu thành công vào "{MODEL_PATH}"')
+    print(f'Mô hình đã được lưu thành công vào "{MODEL_PATH}"')
 
 
 if __name__ == '__main__':

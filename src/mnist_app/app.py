@@ -2,6 +2,10 @@ import base64
 import io
 import os
 from pathlib import Path
+import base64
+import io
+import os
+from pathlib import Path
 from typing import Any
 
 import matplotlib.pyplot as plt
@@ -11,6 +15,7 @@ from flask import Flask, jsonify, render_template, request
 from PIL import Image, ImageOps
 from scipy.ndimage import gaussian_filter
 from werkzeug.utils import secure_filename
+from huggingface_hub import hf_hub_download
 
 BASE_DIR = Path(__file__).resolve().parent
 ROOT_DIR = BASE_DIR.parent.parent
@@ -72,7 +77,7 @@ def index() -> Any:
 def upload() -> Any:
     file = request.files.get('file')
     if file is None or file.filename == '':
-        return jsonify({'error': 'Không có file được tải lên hoặc không có file được chọn'}), 400
+        return jsonify({'error': 'No file uploaded or selected'}), 400
 
     filename = secure_filename(file.filename)
     extension = Path(filename).suffix.lower()
@@ -96,7 +101,7 @@ def predict() -> Any:
     payload = request.get_json(silent=True) or {}
     data_url = payload.get('image')
     if not data_url:
-        return jsonify({'error': 'Không tìm thấy dữ liệu ảnh'}), 400
+        return jsonify({'error': 'No image data found'}), 400
 
     image = decode_image_from_data_url(data_url)
     processed = preprocess_image(image)
@@ -107,6 +112,31 @@ def predict() -> Any:
     probabilities = [float(p) for p in prediction[0]]
 
     return jsonify({'digit': digit, 'probabilities': probabilities})
+
+
+@app.route('/update_model', methods=['POST'])
+def update_model() -> Any:
+    payload = request.get_json(silent=True) or {}
+    repo_id = payload.get('repo_id')
+    
+    if not repo_id:
+        return jsonify({'error': 'Please provide Hugging Face Repo ID'}), 400
+
+    try:
+        # Tải file model.h5 từ Hugging Face
+        downloaded_path = hf_hub_download(repo_id=repo_id, filename="model.h5")
+        
+        # Ghi đè file model.h5 cục bộ bằng shutil
+        import shutil
+        shutil.copy(downloaded_path, str(MODEL_PATH))
+        
+        # Nạp lại model vào bộ nhớ (Global update)
+        global model
+        model = tf.keras.models.load_model(str(MODEL_PATH))
+        
+        return jsonify({'message': f'Successfully loaded model from {repo_id}'})
+    except Exception as e:
+        return jsonify({'error': f'Error loading model: {str(e)}'}), 500
 
 
 if __name__ == '__main__':
