@@ -11,4 +11,4 @@ keras
 torch
 torchvision
 jupyter
-huggingface_hub
+huggingface_hubgunicorn
