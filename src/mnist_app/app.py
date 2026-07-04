@@ -24,6 +24,17 @@ HISTORY_DIR = ROOT_DIR / 'static' / 'assets' / 'histories'
 ALLOWED_UPLOAD_EXTENSIONS = {'.png', '.jpg', '.jpeg', '.webp'}
 
 os.environ['TF_ENABLE_ONEDNN_OPTS'] = '0'
+
+if not MODEL_PATH.exists():
+    print(f"Model not found at {MODEL_PATH}. Downloading from Hugging Face Hub...")
+    try:
+        downloaded_path = hf_hub_download(repo_id="HungNguyen29/mnist-digit-recognition-model", filename="model.h5")
+        import shutil
+        shutil.copy(downloaded_path, str(MODEL_PATH))
+        print("Model downloaded successfully!")
+    except Exception as e:
+        print(f"Error downloading model: {e}")
+
 model = tf.keras.models.load_model(str(MODEL_PATH))
 
 app = Flask(
