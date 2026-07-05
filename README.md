@@ -1,3 +1,11 @@
+---
+title: Digit Recognition
+emoji: 🧠
+colorFrom: blue
+colorTo: indigo
+sdk: docker
+pinned: false
+---
 # MNIST Handwriting Recognition
 
 This repository contains a Flask web app and training utilities for MNIST digit recognition.
@@ -28,3 +36,4 @@ python run.py
 ```bash
 python src/mnist_app/train.py
 ```
+
