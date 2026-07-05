@@ -16,8 +16,11 @@ jobs:
         env:
           HF_TOKEN: ${{ secrets.HF_TOKEN }}
         run: |
-          # Use Git to push to HF Spaces
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git config --global user.name "github-actions[bot]"
-          git remote add huggingface https://HungNguyen29:$HF_TOKEN@huggingface.co/spaces/HungNguyen29/digit-recognition
-          git push -f huggingface main
+          git clone https://HungNguyen29:$HF_TOKEN@huggingface.co/spaces/HungNguyen29/digit-recognition hf_space
+          rsync -av --exclude='.git' --exclude='hf_space' --exclude='assets/dataset' --exclude='*.h5' ./ hf_space/
+          cd hf_space
+          git add -A
+          git commit -m "Sync from GitHub Action" || echo "No changes to commit"
+          git push
